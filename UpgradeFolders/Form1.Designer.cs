@@ -30,13 +30,16 @@
         {
             button1 = new Button();
             textBox1 = new TextBox();
+            label1 = new Label();
+            textBox2 = new TextBox();
+            label2 = new Label();
             SuspendLayout();
             // 
             // button1
             // 
-            button1.Location = new Point(149, 56);
+            button1.Location = new Point(182, 56);
             button1.Name = "button1";
-            button1.Size = new Size(75, 23);
+            button1.Size = new Size(116, 23);
             button1.TabIndex = 0;
             button1.Text = "进行提级";
             button1.UseVisualStyleBackColor = true;
@@ -44,20 +47,52 @@
             // 
             // textBox1
             // 
-            textBox1.Location = new Point(12, 12);
+            textBox1.Location = new Point(107, 12);
             textBox1.Name = "textBox1";
-            textBox1.Size = new Size(212, 23);
+            textBox1.Size = new Size(191, 23);
             textBox1.TabIndex = 1;
+            textBox1.TextChanged += this.textBox1_TextChanged;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(9, 15);
+            label1.Name = "label1";
+            label1.Size = new Size(92, 17);
+            label1.TabIndex = 2;
+            label1.Text = "提级的父文件夹";
+            // 
+            // textBox2
+            // 
+            textBox2.Location = new Point(107, 56);
+            textBox2.Name = "textBox2";
+            textBox2.Size = new Size(40, 23);
+            textBox2.TabIndex = 3;
+            textBox2.Text = "80";
+            textBox2.TextChanged += textBox2_TextChanged;
+            // 
+            // label2
+            // 
+            label2.AutoSize = true;
+            label2.Location = new Point(57, 59);
+            label2.Name = "label2";
+            label2.Size = new Size(44, 17);
+            label2.TabIndex = 4;
+            label2.Text = "置信度";
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(236, 91);
+            ClientSize = new Size(310, 91);
+            Controls.Add(label2);
+            Controls.Add(textBox2);
+            Controls.Add(label1);
             Controls.Add(textBox1);
             Controls.Add(button1);
             Name = "Form1";
             Text = "文件夹提级";
+            Load += Form1_Load;
             DragDrop += Form1_DragDrop;
             DragEnter += Form1_DragEnter;
             ResumeLayout(false);
@@ -68,5 +103,8 @@
 
         private Button button1;
         private TextBox textBox1;
+        private Label label1;
+        private TextBox textBox2;
+        private Label label2;
     }
 }

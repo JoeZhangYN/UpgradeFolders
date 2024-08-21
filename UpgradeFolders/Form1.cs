@@ -10,6 +10,8 @@ namespace UpgradeFolders
             InitializeComponent();
         }
 
+        private static double Confidence = 0.2;
+
         static void UpgradeFolders(string? folderPath)
         {
             // 获取当前目录下的所有子文件夹
@@ -23,8 +25,16 @@ namespace UpgradeFolders
                 string subFolderName = new DirectoryInfo(subFolderPath).Name;
                 string parentFolderName = new DirectoryInfo(folderPath).Name;
 
+                int maxDistance;
+
+                var averageLength = subFolderName.Length + parentFolderName.Length;
+                averageLength = (int)Math.Round(averageLength * 0.5, 0); // 取平均长度
+
+                if (averageLength <= 4) maxDistance = 0; // 当平均长度小于4，则完全匹配
+                else maxDistance = Math.Max(0, (int)Math.Round(averageLength * Confidence, 0)); // 否则取 默认80%置信度 
+
                 // 检查子文件夹名称是否与父文件夹名称相同
-                if (string.Equals(subFolderName, parentFolderName, StringComparison.OrdinalIgnoreCase))
+                if (ComputeLevenshteinDistance(subFolderName, parentFolderName) <= maxDistance)
                 {
                     // 递归进入子文件夹
                     folderPath = subFolderPath;
@@ -139,6 +149,62 @@ namespace UpgradeFolders
                     textBox1.Text = folderPath;
                 }
             }
+        }
+
+        /// <summary>
+        ///     通过矩阵计算两个字符串之间的Levenshtein距离
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        private static int ComputeLevenshteinDistance(string source, string target)
+        {
+            int m = source.Length;
+            int n = target.Length;
+            int[,] d = new int[m + 1, n + 1];
+
+            // 初始化矩阵
+            for (int i = 0; i <= m; i++)
+            {
+                d[i, 0] = i;
+            }
+
+            for (int j = 0; j <= n; j++)
+            {
+                d[0, j] = j;
+            }
+
+            // 对比Levenshtein距离
+            for (int i = 1; i <= m; i++)
+            {
+                for (int j = 1; j <= n; j++)
+                {
+                    int cost = (source[i - 1] == target[j - 1]) ? 0 : 1;
+                    d[i, j] = Math.Min(
+                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                        d[i - 1, j - 1] + cost);
+                }
+            }
+
+            return d[m, n];
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                Confidence = (100 - Convert.ToDouble(textBox2.Text.Trim())) * 0.01;
+            }
+            catch
+            {
+                MessageBox.Show("输入的数值有误");
+                textBox2.Text = 80.ToString();
+            }
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+
         }
     }
 }
