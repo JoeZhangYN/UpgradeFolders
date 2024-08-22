@@ -33,13 +33,15 @@
             label1 = new Label();
             textBox2 = new TextBox();
             label2 = new Label();
+            label3 = new Label();
+            textBox3 = new TextBox();
             SuspendLayout();
             // 
             // button1
             // 
-            button1.Location = new Point(182, 56);
+            button1.Location = new Point(203, 49);
             button1.Name = "button1";
-            button1.Size = new Size(116, 23);
+            button1.Size = new Size(95, 41);
             button1.TabIndex = 0;
             button1.Text = "进行提级";
             button1.UseVisualStyleBackColor = true;
@@ -51,7 +53,6 @@
             textBox1.Name = "textBox1";
             textBox1.Size = new Size(191, 23);
             textBox1.TabIndex = 1;
-            textBox1.TextChanged += this.textBox1_TextChanged;
             // 
             // label1
             // 
@@ -64,9 +65,9 @@
             // 
             // textBox2
             // 
-            textBox2.Location = new Point(107, 56);
+            textBox2.Location = new Point(119, 67);
             textBox2.Name = "textBox2";
-            textBox2.Size = new Size(40, 23);
+            textBox2.Size = new Size(67, 23);
             textBox2.TabIndex = 3;
             textBox2.Text = "80";
             textBox2.TextChanged += textBox2_TextChanged;
@@ -74,17 +75,37 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(57, 59);
+            label2.Location = new Point(119, 41);
             label2.Name = "label2";
             label2.Size = new Size(44, 17);
             label2.TabIndex = 4;
             label2.Text = "置信度";
             // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(9, 41);
+            label3.Name = "label3";
+            label3.Size = new Size(104, 17);
+            label3.TabIndex = 5;
+            label3.Text = "完全匹配最小长度";
+            // 
+            // textBox3
+            // 
+            textBox3.Location = new Point(9, 67);
+            textBox3.Name = "textBox3";
+            textBox3.Size = new Size(92, 23);
+            textBox3.TabIndex = 6;
+            textBox3.Text = "4";
+            textBox3.TextChanged += textBox3_TextChanged;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(310, 91);
+            ClientSize = new Size(310, 102);
+            Controls.Add(textBox3);
+            Controls.Add(label3);
             Controls.Add(label2);
             Controls.Add(textBox2);
             Controls.Add(label1);
@@ -106,5 +127,7 @@
         private Label label1;
         private TextBox textBox2;
         private Label label2;
+        private Label label3;
+        private TextBox textBox3;
     }
 }

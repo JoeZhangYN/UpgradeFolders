@@ -11,6 +11,7 @@ namespace UpgradeFolders
         }
 
         private static double Confidence = 0.2;
+        private static int MinLength = 4;
 
         static void UpgradeFolders(string? folderPath)
         {
@@ -30,8 +31,8 @@ namespace UpgradeFolders
                 var averageLength = subFolderName.Length + parentFolderName.Length;
                 averageLength = (int)Math.Round(averageLength * 0.5, 0); // 取平均长度
 
-                if (averageLength <= 4) maxDistance = 0; // 当平均长度小于4，则完全匹配
-                else maxDistance = Math.Max(0, (int)Math.Round(averageLength * Confidence, 0)); // 否则取 默认80%置信度 
+                if (averageLength <= MinLength) maxDistance = 0; // 默认平均长度小于4，则完全匹配
+                else maxDistance = Math.Max(0, (int)Math.Round(averageLength * Confidence, 0)); // 否则取 默认80%置信度
 
                 // 检查子文件夹名称是否与父文件夹名称相同
                 if (ComputeLevenshteinDistance(subFolderName, parentFolderName) <= maxDistance)
@@ -205,6 +206,19 @@ namespace UpgradeFolders
         private void Form1_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void textBox3_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                MinLength = Convert.ToInt32(textBox2.Text.Trim());
+            }
+            catch
+            {
+                MessageBox.Show("输入的数值有误");
+                textBox3.Text = 4.ToString();
+            }
         }
     }
 }
