@@ -11,86 +11,148 @@ namespace UpgradeFolders
         }
 
         private static double Confidence = 0.2;
+        private static int MinLength = 4;
 
-        static void UpgradeFolders(string? folderPath)
+        public void UpgradeFolders(string originalRootPath)
         {
-            // 获取当前目录下的所有子文件夹
-            string?[] subDirectories = Directory.GetDirectories(folderPath);
-            string? originalRootPath = folderPath; // 原始根路径
-
-            // 如果当前目录下有且仅有一个子文件夹
-            while (subDirectories.Length == 1)
+            if (string.IsNullOrEmpty(originalRootPath) || !Directory.Exists(originalRootPath))
             {
-                string? subFolderPath = subDirectories[0];
-                string subFolderName = new DirectoryInfo(subFolderPath).Name;
-                string parentFolderName = new DirectoryInfo(folderPath).Name;
+                // MessageBox.Show("无效的根目录路径。");
+                return;
+            }
 
-                int maxDistance;
+            string deepestFolderPath = FindDeepestSimilarFolder(originalRootPath);
 
-                var averageLength = subFolderName.Length + parentFolderName.Length;
-                averageLength = (int)Math.Round(averageLength * 0.5, 0); // 取平均长度
+            if (string.Equals(deepestFolderPath, originalRootPath, StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show("没有找到需要处理的子文件夹。");
+                return;
+            }
 
-                if (averageLength <= 4) maxDistance = 0; // 当平均长度小于4，则完全匹配
-                else maxDistance = Math.Max(0, (int)Math.Round(averageLength * Confidence, 0)); // 否则取 默认80%置信度 
+            MoveContents(deepestFolderPath, originalRootPath);
+            DeleteEmptyFolders(deepestFolderPath, originalRootPath);
+        }
 
-                // 检查子文件夹名称是否与父文件夹名称相同
+        private string FindDeepestSimilarFolder(string folderPath)
+        {
+            while (true)
+            {
+                string[] subDirectories = Directory.GetDirectories(folderPath);
+                if (subDirectories.Length != 1)
+                    break;
+
+                string subFolderPath = subDirectories[0];
+                string subFolderName = Path.GetFileName(subFolderPath);
+                string parentFolderName = Path.GetFileName(folderPath);
+
+                int averageLength = (subFolderName.Length + parentFolderName.Length) / 2;
+                int maxDistance = averageLength <= MinLength ? 0 : Math.Max(0, (int)(averageLength * Confidence));
+
                 if (ComputeLevenshteinDistance(subFolderName, parentFolderName) <= maxDistance)
                 {
-                    // 递归进入子文件夹
                     folderPath = subFolderPath;
-                    subDirectories = Directory.GetDirectories(folderPath);
                 }
                 else
                 {
                     break;
                 }
             }
+            return folderPath;
+        }
 
-            // 此时folderPath指向最深的符合条件的文件夹
-            string? deepestFolderPath = folderPath;
-
-            // 如果最深层文件夹路径与原始根路径相同，则不执行移动操作
-            if (string.Equals(deepestFolderPath, originalRootPath, StringComparison.OrdinalIgnoreCase)) return;
-
-            // 移动最深层文件夹中的所有文件到原始根目录
-            foreach (var file in Directory.GetFiles(deepestFolderPath))
+        private void MoveContents(string sourceFolder, string destinationFolder)
+        {
+            // 移动文件
+            foreach (var file in Directory.GetFiles(sourceFolder))
             {
                 string fileName = Path.GetFileName(file);
-                string destFile = Path.Combine(originalRootPath, fileName);
-
-                // 检查文件是否已经存在
+                string destFile = Path.Combine(destinationFolder, fileName);
                 if (!File.Exists(destFile))
                 {
                     File.Move(file, destFile);
+                    // MessageBox.Show($"已移动文件: {fileName}");
                 }
                 else
                 {
-                    Console.WriteLine($"文件 {fileName} 已存在于目标目录，跳过移动。");
+                    // MessageBox.Show($"文件已存在，跳过: {fileName}");
                 }
             }
 
-            // 移动最深层文件夹中的所有子文件夹到原始根目录
-            foreach (var directory in Directory.GetDirectories(deepestFolderPath))
+            // 移动文件夹
+            foreach (var directory in Directory.GetDirectories(sourceFolder))
             {
-                string destDirectory = Path.Combine(originalRootPath, new DirectoryInfo(directory).Name);
-
-                // 检查目标子文件夹是否已经存在
+                string dirName = Path.GetFileName(directory);
+                string destDirectory = Path.Combine(destinationFolder, dirName);
                 if (!Directory.Exists(destDirectory))
                 {
                     Directory.Move(directory, destDirectory);
+                    // MessageBox.Show($"已移动文件夹: {dirName}");
                 }
                 else
                 {
-                    Console.WriteLine($"文件夹 {new DirectoryInfo(directory).Name} 已存在于目标目录，跳过移动。");
+                    // MessageBox.Show($"文件夹已存在，跳过: {dirName}");
                 }
             }
+        }
 
-            // 从最深层开始向上删除空文件夹
-            while (folderPath != originalRootPath)
+        private void DeleteEmptyFolders(string currentFolder, string stopFolder)
+        {
+            if (string.IsNullOrEmpty(currentFolder) || string.IsNullOrEmpty(stopFolder))
             {
-                var parentPath = Directory.GetParent(folderPath)?.FullName;
-                Directory.Delete(folderPath);
-                folderPath = parentPath;
+                MessageBox.Show("无效的文件夹路径。");
+                return;
+            }
+
+            while (!string.Equals(currentFolder, stopFolder, StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    if (!Directory.Exists(currentFolder))
+                    {
+                        // MessageBox.Show($"文件夹不存在: {currentFolder}");
+                        break;
+                    }
+
+                    if (Directory.GetFileSystemEntries(currentFolder).Length == 0)
+                    {
+                        var parentDirectory = Directory.GetParent(currentFolder);
+                        if (parentDirectory == null)
+                        {
+                            // MessageBox.Show($"无法获取父文件夹: {currentFolder}");
+                            break;
+                        }
+
+                        string parentFolder = parentDirectory.FullName;
+
+                        try
+                        {
+                            Directory.Delete(currentFolder);
+                            // MessageBox.Show($"已删除空文件夹: {currentFolder}");
+                        }
+                        catch (IOException)
+                        {
+                            // MessageBox.Show($"删除文件夹时出错: {currentFolder}. 错误: {ex.Message}");
+                            break;
+                        }
+                        catch (UnauthorizedAccessException)
+                        {
+                            // MessageBox.Show($"没有权限删除文件夹: {currentFolder}. 错误: {ex.Message}");
+                            break;
+                        }
+
+                        currentFolder = parentFolder;
+                    }
+                    else
+                    {
+                        // MessageBox.Show($"文件夹不为空，停止删除: {currentFolder}");
+                        break;
+                    }
+                }
+                catch (Exception)
+                {
+                    // MessageBox.Show($"处理文件夹时发生未预期的错误: {currentFolder}. 错误: {ex.Message}");
+                    break;
+                }
             }
         }
 
@@ -99,7 +161,7 @@ namespace UpgradeFolders
             string rootFolderPath = textBox1.Text; // 根目录路径
 
             // 获取当前目录下的所有子文件夹
-            string?[] subDirectories = Directory.GetDirectories(rootFolderPath);
+            string[] subDirectories = Directory.GetDirectories(rootFolderPath);
             var errorDir = "";
 
             try
@@ -122,32 +184,89 @@ namespace UpgradeFolders
 
         private void Form1_DragEnter(object sender, DragEventArgs e)
         {
-            // 检查拖入的数据是否为文件夹或文件
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (e == null)
             {
-                string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+                return; // 如果事件参数为空，直接返回
+            }
 
-                if (paths.Length > 0 && Directory.Exists(paths[0]))
+            try
+            {
+                // 检查拖入的数据是否为文件或文件夹
+                if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
                 {
-                    // 设置拖放效果为复制
-                    e.Effect = DragDropEffects.Copy;
+                    var data = e.Data.GetData(DataFormats.FileDrop);
+                    if (data is string[] paths && paths.Length > 0)
+                    {
+                        // 检查第一个路径是否为文件夹
+                        if (Directory.Exists(paths[0]))
+                        {
+                            // 设置拖放效果为复制
+                            e.Effect = DragDropEffects.Copy;
+                        }
+                        else
+                        {
+                            // 如果不是文件夹，设置为不允许
+                            e.Effect = DragDropEffects.None;
+                        }
+                    }
+                    else
+                    {
+                        e.Effect = DragDropEffects.None;
+                    }
                 }
+                else
+                {
+                    e.Effect = DragDropEffects.None;
+                }
+            }
+            catch (Exception)
+            {
+                // 发生任何异常时，设置为不允许拖放
+                e.Effect = DragDropEffects.None;
             }
         }
 
         private void Form1_DragDrop(object sender, DragEventArgs e)
         {
-            // 获取拖入的数据
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            if (e == null)
             {
-                string[] paths = (string[])e.Data.GetData(DataFormats.FileDrop);
+                MessageBox.Show("拖放事件数据为空。");
+                return;
+            }
 
-                // 获取拖入的第一个文件夹路径（如果有多个，只获取第一个）
-                if (paths.Length > 0 && Directory.Exists(paths[0]))
+            try
+            {
+                // 检查是否存在文件拖放数据
+                if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
                 {
-                    string folderPath = paths[0];
-                    textBox1.Text = folderPath;
+                    // 尝试获取拖放的文件路径
+                    var data = e.Data.GetData(DataFormats.FileDrop);
+                    if (data is string[] paths && paths.Length > 0)
+                    {
+                        string folderPath = paths[0];
+                        // 检查路径是否为有效目录
+                        if (!string.IsNullOrEmpty(folderPath) && Directory.Exists(folderPath))
+                        {
+                            textBox1.Text = folderPath;
+                        }
+                        else
+                        {
+                            MessageBox.Show("拖放的不是有效的文件夹。");
+                        }
+                    }
+                    else
+                    {
+                        MessageBox.Show("没有获取到有效的文件路径。");
+                    }
                 }
+                else
+                {
+                    MessageBox.Show("请拖放文件夹。");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"处理拖放操作时发生错误：{ex.Message}");
             }
         }
 
@@ -205,6 +324,19 @@ namespace UpgradeFolders
         private void Form1_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void textBox3_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                MinLength = Convert.ToInt32(textBox2.Text.Trim());
+            }
+            catch
+            {
+                MessageBox.Show("输入的数值有误");
+                textBox3.Text = 4.ToString();
+            }
         }
     }
 }
