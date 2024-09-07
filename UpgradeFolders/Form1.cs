@@ -10,9 +10,7 @@ namespace UpgradeFolders
             InitializeComponent();
         }
 
-        private static double JaccardThreshold = 0.7; // Jaccard相似度阈值
-        private static double LevenshteinThreshold = 0.8; // Levenshtein相似度阈值
-        private static int MinLength = 4;
+        private static double Confidence = 0.2;
 
         public void UpgradeFolders(string originalRootPath)
         {
@@ -23,13 +21,18 @@ namespace UpgradeFolders
 
             bool upgraded = UpgradeSingleFolder(originalRootPath);
 
-            if (upgraded)
-            {
-                // 如果发生了提级，递归处理父文件夹
-                string parentPath = Path.GetDirectoryName(originalRootPath) ?? "";
-                if (!string.IsNullOrEmpty(parentPath))
+                var averageLength = subFolderName.Length + parentFolderName.Length;
+                averageLength = (int)Math.Round(averageLength * 0.5, 0); // 取平均长度
+
+                if (averageLength <= 4) maxDistance = 0; // 当平均长度小于4，则完全匹配
+                else maxDistance = Math.Max(0, (int)Math.Round(averageLength * Confidence, 0)); // 否则取 默认80%置信度 
+
+                // 检查子文件夹名称是否与父文件夹名称相同
+                if (ComputeLevenshteinDistance(subFolderName, parentFolderName) <= maxDistance)
                 {
-                    UpgradeFolders(parentPath);
+                    // 递归进入子文件夹
+                    folderPath = subFolderPath;
+                    subDirectories = Directory.GetDirectories(folderPath);
                 }
             }
             else
@@ -410,6 +413,19 @@ namespace UpgradeFolders
             {
                 MessageBox.Show("输入的数值有误");
                 textBox2.Text = 80.ToString();
+            }
+        }
+
+        private void textBox3_TextChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                MinLength = Convert.ToInt32(textBox2.Text.Trim());
+            }
+            catch
+            {
+                MessageBox.Show("输入的数值有误");
+                textBox3.Text = 4.ToString();
             }
         }
     }
